@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Chat App</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+        }
+        .box {
+            height: 100vh;
+        }
+    </style>
+    <link rel="stylesheet" href="/public/css/style.css">
+</head>
+
+<body>
+    <div id="chat" class="max-w-2xl my-1 mx-auto box flex justify-center flex-col">
+
+        {{!-- SERVER TO ALL CLIENTS --}}
+        {{!-- <div class="bg-amber-400 w-1/2 h-24 flex-col justify-end flex mx-2">
+            <h1 class="text-2xl font-semibold pt-5">SERVER TO ALL CLIENTS</h1>
+            <form action="#" onsubmit="pushToAllClients()" class="flex my-3 text-white">
+                <input type="text" class="border-none bg-red-900 m-2">
+                <button type="submit" class="bg-white rounded w-24 m-2 p-1 text-black font-semibold">submit</button>
+            </form>
+        </div> --}}
+        {{!--  --}}
+
+        {{!-- Client to Client --}}
+        {{!-- <div id="chatBox" class="max-w-4xl my-2 w-96 text-white justify-end mx-auto flex flex-col box bg-amber-800">
+            <form action="#" onsubmit="pushChat(event)" class="flex">
+                <input type="text" id="chat-input" class="text-black w-64 border-4 border-yellow-600" value="HELLO WORLD">
+                <button type="submit" class="text-black w-32 bg-indigo-300">submit</button>
+            </form>
+            <a href="" class="self-center order-3 bg-rose-500 p-3 rounded-md text-white font-semibold text-white my-3 hover:bg-rose-600">Leave Room</a>
+        </div> --}}
+        {{!--  --}}
+        {{!-- <button onclick="joinServer()" class="bg-pink-900 border-2 rounded-md text-white p-3 text-4xl">Join Room as Server</button> --}}
+
+        <button onclick="joinClient()" class="bg-neutral-700 border-2 rounded-md text-white p-3 text-4xl">Join Room</button>
+
+    </div>
+    <script src="/node/socket.io/client-dist/socket.io.js"></script>
+    <script>
+        const socket = io(); //connect client to server;
+        const chat = document.getElementById('chat');
+
+        let boxChatClient = ``;
+        let boxChatServer = ``;
+        let name = document.getElementById('name');
+
+
+        socket.on("connect", ()=>{
+            
+            boxChatClient += 
+            `
+            <h1 class="text-lg text-black font-semibold">User ID= ${socket?.id}</h1>
+            <div id="chatBox" class="my-2text-white justify-end mx-auto flex flex-col box bg-amber-800 h-100">
+                <form action="#" onsubmit="pushClient(event)" class="flex order-2">
+                    <input type="text" id="chat-input" class="text-black w-64 border-4 border-yellow-600" autocomplete="true">
+                    <button type="submit" class="text-black w-32 bg-indigo-300">submit</button>
+                </form>
+                <a href="" class="self-center order-3 bg-rose-500 p-3 rounded-md text-white font-semibold text-white my-3 hover:bg-rose-600">Leave Room</a>
+            </div>
+            `;
+
+            boxChatServer = `
+            <h1 class="text-lg text-black font-semibold">User ID= ${socket?.id}</h1>
+            <div class="bg-amber-400 h-24 flex-col justify-end mt-5 flex">
+                <h1 class="text-2xl font-semibold pt-5">SERVER TO ALL CLIENTS</h1>
+                <form action="#" onsubmit="pushToAllClients(event)" class="flex my-3 text-white">
+                    <input type="text" id="serverInput" class="border-none bg-red-900 m-2">
+                    <button type="submit" class="bg-white rounded w-24 m-2 p-1 text-black font-semibold">submit</button>
+                </form>
+            </div>
+            `;
+
+
+            socket.on('chat message', (msg)=>{
+                let h1 = document.createElement('h1')
+                h1.classList.add('font-semibold');
+                h1.classList.add('text-lg');
+                h1.classList.add('text-white');
+                h1.classList.add('order-1');
+                h1.classList.add('p-1');
+                h1.classList.add('bg-neutral-700');
+                h1.classList.add('rounded-md');
+                h1.classList.add('my-2');
+                h1.classList.add('mx-2');
+                h1.classList.add('self-start');
+                h1.textContent = `${msg}`;
+                let idChatBox = document.getElementById('chatBox');
+                idChatBox.appendChild(h1);
+            });
+
+
+            socket.on('server chat message', (msg)=>{
+                let h1 = document.createElement('h1')
+                h1.classList.add('font-semibold');
+                h1.classList.add('text-lg');
+                h1.classList.add('text-center');
+                h1.classList.add('order-1');
+                h1.classList.add('bg-green-600');
+                h1.classList.add('rounded-md');
+                h1.classList.add('my-2');
+                h1.classList.add('p-1');
+                h1.classList.add('mx-2');
+                h1.classList.add('self-center');
+                h1.textContent = `${msg}`;
+                let idChatBox = document.getElementById('chatBox');
+                idChatBox.appendChild(h1);
+            });
+
+        });
+        function joinClient(){
+            chat.textContent ='';
+            chat.insertAdjacentHTML('beforeend', boxChatClient);
+        }
+
+        
+
+        function joinServer(){
+            chat.textContent = '';
+            chat.insertAdjacentHTML('beforeend', boxChatServer);
+        }
+
+
+        
+
+        // Push chat server to all clients
+        function pushToAllClients(event){
+            event.preventDefault();
+            const inputServer = document.querySelector('input[id="serverInput"]');
+            if (inputServer.value){
+                socket.emit('server chat message', inputServer.value);
+                inputServer.value = '';
+            }
+        }
+
+        
+        // PUSH CHAT client to client
+        function pushClient(e){
+            e.preventDefault();
+            const inputChat = document.querySelector('input[id="chat-input"]');
+            if(inputChat.value){
+                let h1 = document.createElement('h1')
+                h1.classList.add('font-semibold');
+                h1.classList.add('text-lg');
+                h1.classList.add('text-black');
+                h1.classList.add('order-1');
+                h1.classList.add('bg-yellow-400');
+                h1.classList.add('rounded-md');
+                h1.classList.add('my-2');
+                h1.classList.add('p-1');
+                h1.classList.add('mx-2');
+                h1.classList.add('self-end');
+                h1.textContent = `${inputChat.value}`;
+                let idChatBox = document.getElementById('chatBox');
+                idChatBox.appendChild(h1);
+                socket.emit('chat message', inputChat.value);
+                inputChat.value = '';
+            }
+        }
+
+        
+        
+    </script>
+</body>
+
+</html>
